@@ -1,95 +1,309 @@
-"use client"
-import React, { useState} from "react";
+'use client'
+import React, { useState, useEffect } from "react";
 import CalendarGrid from "./calendarGrid";
-import CalendarHeader from "./calendarHeader";
 import EventModal from "./eventModal";
+import ViewSelector from "./viewSelector";
+import WeekView from "./weekView";
+import WeekSelector from "./weekSelector";
 
-const monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+const weekDayNames = [
+  "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", 
+  "Quinta-feira", "Sexta-feira", "Sábado"
 ];
+
+interface InputEvent {
+  dia_semana: string;
+  hora_inicio: string;
+  hora_fim: string;
+  titulo: string;    // Alterado de "materia"
+  descricao?: string; // Adicionado campo de descrição
+  data?: string;     // YYYY-MM-DD
+  cor?: string;      // Cor personalizada para o evento (opcional)
+}
 
 interface Event {
   id: string;
   date: string;
-  day: number;
-  month: number;
-  year: number;
-  time: string;
-  title: string;
-  description: string;
+  dia: number;
+  mes: number;
+  ano: number;
+  hora: string;
+  titulo: string;
+  descricao: string;
+  cor?: string;    
 }
 
 interface CalendarProps {
-  onClick?: () => void;
-  events?: Event[];
+  eventos?: InputEvent[];
 }
 
+/**
+ * Componente principal do Calendário
+ * 
+ * Este componente gerencia a visualização e interação com o calendário:
+ * - Exibe um calendário mensal com dias interativos
+ * - Mostra eventos agendados em cada dia
+ * - Permite navegação entre meses (anterior/próximo)
+ * - Exibe detalhes dos eventos ao clicar em um dia
+ * 
+ * O componente recebe dados de eventos através da prop 'eventos' e os
+ * processa para exibição no formato adequado para o calendário.
+ */
+
+
 export const Calendar: React.FC<CalendarProps> = ({
-  events = [],
+  eventos = [],
 }) => {
-  const today = new Date();
-  const [year, setYear] = useState<number>(today.getFullYear());
+  const today = React.useMemo(() => new Date(), []);
+  const [ano, setAno] = useState<number>(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth());
-  const [selectedDay, setSelectedDay] = useState<number | null>(today.getDate());
-  const [showModal, setShowModal] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<Event[]>([]);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDayMonth, setSelectedDayMonth] = useState<number | null>(null);
+  const [selectedDayYear, setSelectedDayYear] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [currentView, setCurrentView] = useState<'month' | 'week'>('month');
+  const [currentWeekDate, setCurrentWeekDate] = useState<Date>(today);
+  
+  useEffect(() => {
+    if (eventos && eventos.length > 0) {
+      const mappedEvents = eventos.map((evento, index) => {
+        let eventDate = today;
+        let dia = today.getDate();
+        let mes = today.getMonth();
+        let anoEvento = today.getFullYear();
 
-  const [eventsForSelectedDay, setEventsForSelectedDay] = useState<Event[]>([]);
+        if (evento.data) {
+          const [year, month, day] = evento.data.split('-').map(Number);
+          eventDate = new Date(year, month - 1, day);
+          
+          dia = eventDate.getDate();
+          mes = eventDate.getMonth();
+          anoEvento = eventDate.getFullYear();
+        } else {
+          const diaSemanaIndex = weekDayNames.findIndex(day => 
+            day.toLowerCase().includes(evento.dia_semana.toLowerCase())
+          );
+          
+          if (diaSemanaIndex !== -1) {
+            const currentDay = today.getDay();
+            const daysUntil = (diaSemanaIndex + 7 - currentDay) % 7;
+            eventDate = new Date(today);
+            eventDate.setDate(today.getDate() + daysUntil);
+            
+            dia = eventDate.getDate();
+            mes = eventDate.getMonth();
+            anoEvento = eventDate.getFullYear();
+          }
+        }
+        
+        return {
+          id: `evento-${index}`,
+          date: `${anoEvento}-${(mes + 1).toString().padStart(2, '0')}-${dia.toString().padStart(2, '0')}`,
+          dia,
+          mes,
+          ano: anoEvento,
+          hora: evento.hora_inicio,
+          titulo: evento.titulo,
+          descricao: evento.descricao || `${evento.hora_inicio} - ${evento.hora_fim}`,
+          cor: evento.cor
+        };
+      });
+      
+      setCalendarEvents(mappedEvents);
+    }
+  }, [eventos, today]);
 
-  const monthOptions = monthNames.map((month, index) => ({
-    name: month,
-    value: `${index}`,
-  }));
-
-  const handlePrevYear = () => setYear((prevYear) => prevYear - 1);
-  const handleNextYear = () => setYear((prevYear) => prevYear + 1);
-
-  const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const monthIndex = parseInt(event.target.value, 10);
-    setSelectedMonth(monthIndex);
+  const handlePrevMonth = () => {
+    if (selectedMonth === 0) {
+      setSelectedMonth(11);
+      setAno(ano - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
   };
 
-  const handleDayClick = (day: number, month: number, year: number) => {
-    setSelectedDay(day);
-    setEventsForSelectedDay(
-      events.filter(
-        (event: Event) =>
-          event.day === day && event.month === month && event.year === year
-      )
+  const handleNextMonth = () => {
+    if (selectedMonth === 11) {
+      setSelectedMonth(0);
+      setAno(ano + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
+
+  const handleDayClick = (dia: number, mes: number, ano: number) => {
+    const eventsOnDay = calendarEvents.filter(
+      event => event.dia === dia && event.mes === mes && event.ano === ano
     );
-    setShowModal(true);
+    
+    if (eventsOnDay.length > 0) {
+      setSelectedDay(dia);
+      setSelectedDayMonth(mes);
+      setSelectedDayYear(ano);
+      setIsModalOpen(true);
+    }
+    
+    console.log(`Dia selecionado: ${dia}/${mes + 1}/${ano}`);
   };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedDay(null);
+    setSelectedDayMonth(null);
+    setSelectedDayYear(null);
+  };
+
+  const eventsForSelectedDay = calendarEvents.filter(
+    event => 
+      event.dia === selectedDay && 
+      event.mes === selectedDayMonth && 
+      event.ano === selectedDayYear
+  );
 
   const handleTodayClick = () => {
-    setYear(today.getFullYear());
+    const today = new Date();
+    setAno(today.getFullYear());
     setSelectedMonth(today.getMonth());
-    setSelectedDay(today.getDate());
+    setCurrentWeekDate(today);
   };
 
+  const handleViewChange = (view: 'month' | 'week') => {
+    setCurrentView(view);
+  };
+
+  const handlePrevWeek = () => {
+    const prevWeek = new Date(currentWeekDate);
+    prevWeek.setDate(prevWeek.getDate() - 7);
+    setCurrentWeekDate(prevWeek);
+  };
+
+  const handleNextWeek = () => {
+    const nextWeek = new Date(currentWeekDate);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    setCurrentWeekDate(nextWeek);
+  };
+
+
   return (
-    <div className="no-scrollbar calendar-container max-h-full overflow-y-scroll rounded-t-2xl p-10 text-slate-800 ">
-      <CalendarHeader
-        year={year}
-        selectedMonth={selectedMonth}
-        onPrevYear={handlePrevYear}
-        onNextYear={handleNextYear}
-        onTodayClick={handleTodayClick}
-        onMonthChange={handleMonthChange}
-        monthOptions={monthOptions}
-      />
-      <CalendarGrid
-        year={year}
-        selectedMonth={selectedMonth}
-        events={events}
-        onDayClick={handleDayClick}
-      />
-      {showModal && (
-        <EventModal
-          selectedDay={selectedDay}
-          eventsForSelectedDay={eventsForSelectedDay}
-          closeModal={() => setShowModal(false)}
-        />
-      )}
+    <div className="no-scrollbar calendar-container max-h-full overflow-y-scroll p-1 pb-10 text-slate-800">
+      <div className="my-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4 mb-4">
+          <div className="order-1">
+            {currentView === 'month' ? (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePrevMonth}
+                  className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2"
+                >
+                  <svg
+                    className="size-4 sm:size-5 text-slate-800"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="m15 19-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleTodayClick}
+                  type="button"
+                  className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-slate-100 sm:px-3 sm:py-1.5 sm:text-sm"
+                >
+                  Hoje
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2"
+                >
+                  <svg
+                    className="size-4 sm:size-5 text-slate-800"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="m9 5 7 7-7 7"
+                    />
+                  </svg>
+                </button>
+                <div className="ml-2 text-base sm:text-lg font-semibold">
+                  <span className="capitalize text-brand-primary">
+                    {new Date(ano, selectedMonth).toLocaleString('pt-BR', { month: 'long' })}
+                  </span>{' '}
+                  <span className="text-slate-700">{ano}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleTodayClick}
+                  type="button"
+                  className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-slate-100 sm:px-3 sm:py-1.5 sm:text-sm"
+                >
+                  Hoje
+                </button>
+                <div className="ml-2 text-base sm:text-lg font-semibold">
+                  <span className="text-slate-700">{ano}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="order-2 sm:flex sm:justify-end">
+            <ViewSelector 
+              currentView={currentView}
+              onViewChange={handleViewChange}
+            />
+          </div>
+        </div>
+        
+        {currentView === 'week' && (
+          <WeekSelector 
+            currentDate={currentWeekDate}
+            onPrevWeek={handlePrevWeek}
+            onNextWeek={handleNextWeek}
+          />
+        )}
+        
+        {currentView === 'month' ? (
+          <CalendarGrid
+            ano={ano}
+            selectedMonth={selectedMonth}
+            events={calendarEvents}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <WeekView 
+            currentDate={currentWeekDate}
+            events={calendarEvents}
+          />
+        )}
+        
+        {isModalOpen && selectedDay !== null && (
+          <EventModal
+            selectedDay={selectedDay}
+            eventsForSelectedDay={eventsForSelectedDay}
+            closeModal={closeModal}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -1,50 +1,77 @@
 import React, { useMemo } from "react";
 import { Day } from "./day";
 
+/**
+ * Componente de Grade do Calendário
+ * 
+ * Este componente gera a estrutura visual do calendário:
+ * - Cabeçalho com dias da semana (DOM, SEG, TER...)
+ * - Grade com dias do mês atual
+ * - Dias do mês anterior/próximo para completar as semanas
+ * 
+ * Principais funcionalidades:
+ * - Gera dynamicamente a estrutura do mês atual
+ * - Associa eventos aos dias correspondentes
+ * - Gerencia a seleção e clique nos dias
+ * - Controla a aparência visual de dias especiais (hoje, selecionado)
+ * 
+ * A função generateCalendar é usada para criar a estrutura completa
+ * do calendário, incluindo dias de meses adjacentes quando necessário.
+ */
+
 export interface CalendarEvent {
   id: string;
-  title: string;
+  titulo: string;
   date: string;
-  day: number;
-  month: number;
-  year: number;
-  // Add other properties of Event here
+  dia: number;
+  mes: number;
+  ano: number;
+  hora?: string;
+  descricao?: string;
+  cor?: string;  
 }
 
 interface CalendarGridProps {
-  year: number;
+  ano: number;
   selectedMonth: number;
   events: CalendarEvent[];
-  onDayClick: (day: number, month: number, year: number) => void;
+  onDayClick: (dia: number, mes: number, ano: number) => void;
+  selectedDays?: {dia: number, mes: number, ano: number}[];
+  isDaySelected?: (dia: number, mes: number, ano: number) => boolean;
+  isDayAvailable?: (dia: number, mes: number, ano: number) => boolean;
+  firstSelectedDay?: Date | null;
 }
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({
-  year,
+  ano,
   selectedMonth,
   events,
   onDayClick,
+  isDaySelected = () => false,
+  isDayAvailable = () => true,
 }) => {
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const daysOfWeek = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
+  
   const generateCalendar = useMemo(() => {
-    const daysInMonth = new Date(year, selectedMonth + 1, 0).getDate();
-    const startDayOfWeek = new Date(year, selectedMonth, 1).getDay();
+    const daysInMonth = new Date(ano, selectedMonth + 1, 0).getDate();
+    const startDayOfWeek = new Date(ano, selectedMonth, 1).getDay();
 
-    const daysInMonthArray: { month: number; day: number }[] = [];
+    const daysInMonthArray: { mes: number; dia: number }[] = [];
     for (let i = 0; i < startDayOfWeek; i++) {
       daysInMonthArray.push({
-        month: selectedMonth - 1,
-        day: 32 - startDayOfWeek + i,
+        mes: selectedMonth - 1,
+        dia: 32 - startDayOfWeek + i,
       });
     }
-    for (let day = 1; day <= daysInMonth; day++) {
-      daysInMonthArray.push({ month: selectedMonth, day });
+    for (let dia = 1; dia <= daysInMonth; dia++) {
+      daysInMonthArray.push({ mes: selectedMonth, dia });
     }
 
     const lastWeekDayCount = daysInMonthArray.length % 7;
     if (lastWeekDayCount > 0) {
       const extraDaysNeeded = 7 - lastWeekDayCount;
-      for (let day = 1; day <= extraDaysNeeded; day++) {
-        daysInMonthArray.push({ month: selectedMonth + 1, day });
+      for (let dia = 1; dia <= extraDaysNeeded; dia++) {
+        daysInMonthArray.push({ mes: selectedMonth + 1, dia });
       }
     }
 
@@ -54,36 +81,47 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     }
 
     return calendarWeeks.map((week, weekIndex) => (
-      <div className="flex w-full" key={weekIndex}>
-        {week.map(({ month, day }) => (
-          <Day
-            key={`${month}-${day}`}
-            day={day}
-            month={month}
-            year={year}
-            calendarEvents={events.filter(
-              (event: CalendarEvent) =>
-                event.day === day &&
-                event.month === month &&
-                event.year === year
-            )}
-            onClick={onDayClick}
-          />
-        ))}
+      <div className="grid grid-cols-7 gap-1 w-full mb-1" key={weekIndex}>
+        {week.map(({ mes, dia }) => {
+          const isAvailable = isDayAvailable(dia, mes, ano);
+          const isCurrentMonth = mes === selectedMonth;
+          
+          return (
+            <Day
+              key={`${mes}-${dia}`}
+              dia={dia}
+              mes={mes}
+              ano={ano}
+              calendarEvents={events.filter(
+                (event: CalendarEvent) =>
+                  event.dia === dia &&
+                  event.mes === mes &&
+                  event.ano === ano
+              )}
+              onClick={onDayClick}
+              isSelected={isDaySelected(dia, mes, ano)}
+              isDisabled={!isAvailable}
+              isCurrentMonth={isCurrentMonth}
+            />
+          );
+        })}
       </div>
     ));
-  }, [year, selectedMonth, events, onDayClick]);
+  }, [ano, selectedMonth, events, isDaySelected, isDayAvailable, onDayClick]);
 
   return (
-    <div className="w-full px-5 pt-4 sm:px-8 sm:pt-6">
-      <div className="flex w-full">
+    <div className="w-full px-2 pt-3 sm:px-4 sm:pt-4 md:px-6 md:pt-5 lg:px-8 lg:pt-6">
+      <div className="grid grid-cols-7 gap-1 w-full mb-2">
         {daysOfWeek.map((day, index) => (
-          <div key={index} className="flex-1 text-center font-bold">
+          <div key={index} className="text-center font-medium text-xs sm:text-sm md:text-base text-gray-700">
             {day}
           </div>
         ))}
       </div>
-      {generateCalendar}
+      
+      <div className="calendar-grid">
+        {generateCalendar}
+      </div>
     </div>
   );
 };
