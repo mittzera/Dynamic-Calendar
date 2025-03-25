@@ -1,7 +1,7 @@
+import { Calendar } from "@/components/calendar/calendar";
+import Card from "@/components/Card";
+import { eventosExemplo } from "@/components/data/data";
 
-import { Calendar } from "./components/calendar/calendar";
-import Card from "./components/Card";
-import { eventosExemplo } from "./data/data";
 
 
 export default function Home() {
