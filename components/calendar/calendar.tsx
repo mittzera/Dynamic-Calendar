@@ -5,6 +5,7 @@ import EventModal from "./eventModal";
 import ViewSelector from "./viewSelector";
 import WeekView from "./weekView";
 import WeekSelector from "./weekSelector";
+import CreateEventModal from "./createEventModal";
 
 const weekDayNames = [
   "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", 
@@ -64,6 +65,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<'month' | 'week'>('month');
   const [currentWeekDate, setCurrentWeekDate] = useState<Date>(today);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   useEffect(() => {
     if (eventos && eventos.length > 0) {
@@ -74,7 +77,6 @@ export const Calendar: React.FC<CalendarProps> = ({
         let anoEvento = today.getFullYear();
 
         if (evento.data) {
-          // Change this part to handle DD/MM/YYYY format
           const [day, month, year] = evento.data.split('/').map(Number);
           eventDate = new Date(year, month - 1, day);
           
@@ -98,7 +100,6 @@ export const Calendar: React.FC<CalendarProps> = ({
           }
         }
         
-        // Keep the internal date format as ISO for consistency
         return {
           id: `evento-${index}`,
           date: `${dia.toString().padStart(2, '0')}/${(mes + 1).toString().padStart(2, '0')}/${anoEvento}`,
@@ -186,6 +187,45 @@ export const Calendar: React.FC<CalendarProps> = ({
     setCurrentWeekDate(nextWeek);
   };
 
+  interface EventFormData {
+    date: string;
+    dayOfTheWeek: string;
+    startTime: string;
+    endTime: string;
+    title: string;
+    description: string;
+  }
+
+  const handleCreateEvent = (eventData: EventFormData) => {
+    console.log('New event created:', eventData);
+    const dateParts = eventData.date.split('/').map(Number);
+
+    setCalendarEvents(prev => [
+      ...prev,
+      {
+        id: `evento-${prev.length}`,
+        date: eventData.date,
+        dia: dateParts[0],
+        mes: dateParts[1] - 1,
+        ano: dateParts[2],
+        hora: eventData.startTime,
+        titulo: eventData.title,
+        descricao: eventData.description,
+      }
+    ]);
+    
+    closeCreateModal();
+  };
+
+  const openCreateModal = (date?: Date) => {
+    setSelectedDate(date || today);
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setSelectedDate(null);
+  };
 
   return (
     <div className="no-scrollbar calendar-container max-h-full overflow-y-scroll p-1 pb-10 text-slate-800">
@@ -268,7 +308,13 @@ export const Calendar: React.FC<CalendarProps> = ({
             )}
           </div>
           
-          <div className="order-2 sm:flex sm:justify-end">
+          <div className="order-2 sm:flex sm:justify-end items-center gap-3">
+            <button
+              onClick={() => openCreateModal()}
+              className="px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-opacity-90 transition-colors"
+            >
+              Novo Evento
+            </button>
             <ViewSelector 
               currentView={currentView}
               onViewChange={handleViewChange}
@@ -303,6 +349,14 @@ export const Calendar: React.FC<CalendarProps> = ({
             selectedDay={selectedDay}
             eventsForSelectedDay={eventsForSelectedDay}
             closeModal={closeModal}
+          />
+        )}
+        
+        {isCreateModalOpen && (
+          <CreateEventModal
+            closeModal={closeCreateModal}
+            onCreateEvent={handleCreateEvent}
+            selectedDate={selectedDate}
           />
         )}
       </div>
