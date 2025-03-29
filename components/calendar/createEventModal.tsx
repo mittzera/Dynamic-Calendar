@@ -116,7 +116,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
       const createdEvent = await response.json();
       console.log("Event created successfully:", createdEvent);
 
-      // Call the onCreateEvent prop with the created event data
       onCreateEvent(payload);
       closeModal();
     } catch (err) {
@@ -189,9 +188,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                   dateFormat="dd/MM/yyyy"
                   calendarClassName="bg-white shadow-lg rounded-md border border-gray-200"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Data no formato DD/MM/YYYY
-                </p>
               </div>
             </div>
 

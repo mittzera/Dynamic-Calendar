@@ -136,15 +136,22 @@ export const Calendar: React.FC<CalendarProps> = ({
   };
 
   const handleDayClick = (dia: number, mes: number, ano: number) => {
-    const eventsOnDay = calendarEvents.filter(
-      event => event.dia === dia && event.mes === mes && event.ano === ano
+    setSelectedDay(dia);
+    setSelectedDayMonth(mes);
+    setSelectedDayYear(ano);
+    
+    const hasEvents = calendarEvents.some(
+      event => 
+        event.dia === dia && 
+        event.mes === mes && 
+        event.ano === ano
     );
     
-    if (eventsOnDay.length > 0) {
-      setSelectedDay(dia);
-      setSelectedDayMonth(mes);
-      setSelectedDayYear(ano);
+    if (hasEvents) {
       setIsModalOpen(true);
+    } else {
+      const selectedDateObj = new Date(ano, mes, dia);
+      openCreateModal(selectedDateObj);
     }
     
     console.log(`Dia selecionado: ${dia}/${mes + 1}/${ano}`);
@@ -225,6 +232,15 @@ export const Calendar: React.FC<CalendarProps> = ({
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
     setSelectedDate(null);
+  };
+
+  const handleCreateFromDay = () => {
+    closeModal();
+    
+    if (selectedDay && selectedDayMonth !== null && selectedDayYear !== null) {
+      const selectedDateObj = new Date(selectedDayYear, selectedDayMonth, selectedDay);
+      openCreateModal(selectedDateObj);
+    }
   };
 
   return (
@@ -349,6 +365,7 @@ export const Calendar: React.FC<CalendarProps> = ({
             selectedDay={selectedDay}
             eventsForSelectedDay={eventsForSelectedDay}
             closeModal={closeModal}
+            onCreateEventClick={handleCreateFromDay}
           />
         )}
         
