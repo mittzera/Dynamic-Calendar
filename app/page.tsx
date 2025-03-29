@@ -24,8 +24,6 @@ interface ApiEvent {
     picture: string;
   };
 }
-
-// Interface para o formato de eventos do calendário
 interface CalendarEvent {
   data?: string;
   dia_semana: string;
@@ -36,27 +34,18 @@ interface CalendarEvent {
   cor?: string;
 }
 
-/**
- * Converte formato de data MM/DD/YYYY para YYYY-MM-DD
- */
 function formatDate(dateString: string): string {
-  // Verifica se a data está no formato MM/DD/YYYY
-  const parts = dateString.split("/");
+  const parts = dateString.split("-");
   if (parts.length !== 3) return dateString;
   
-  const month = parts[0].padStart(2, "0");
-  const day = parts[1].padStart(2, "0");
+  const day = parts[0].padStart(2, "0");
+  const month = parts[1].padStart(2, "0");
   const year = parts[2];
   
-  return `${year}-${month}-${day}`;
+  return `${day}/${month}/${year}`;
 }
 
-/**
- * Gera uma cor aleatória baseada no nome do evento
- * para eventos que não têm cor definida
- */
 function generateColorFromTitle(title: string): string {
-  // Lista de cores distintas para eventos
   const colors = [
     "#4f46e5", // Indigo
     "#0ea5e9", // Sky blue
@@ -91,12 +80,14 @@ async function getEvents(): Promise<CalendarEvent[]> {
     const apiEvents: ApiEvent[] = await response.json();
     
     return apiEvents.map(event => {
-      // Convertendo data do formato MM/DD/YYYY para YYYY-MM-DD
       const formattedDate = formatDate(event.date);
-      
-      // Gerando cor baseada no título para eventos sem cor definida
       const eventColor = generateColorFromTitle(event.title);
       
+      if (formattedDate) {
+        const [day, month, year] = formattedDate.split('/').map(Number);
+        new Date(year, month - 1, day);
+      }
+
       return {
         data: formattedDate,
         dia_semana: event.dayOfTheWeek,
@@ -105,7 +96,6 @@ async function getEvents(): Promise<CalendarEvent[]> {
         titulo: event.title,
         descricao: event.description,
         cor: eventColor,
-        // Adicionando metadados extras que podem ser úteis
         _metadata: {
           criador: event.createdBy.username,
           avatar: event.createdBy.picture,
@@ -123,7 +113,6 @@ export default async function Home() {
   const eventos = await getEvents();
   
   if (!eventos || eventos.length === 0) {
-    // Exibir um estado de fallback em vez de redirecionar para o notFound
     return (
       <section className="w-[90%] mx-auto mt-10">
         <Card>

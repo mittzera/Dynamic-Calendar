@@ -74,7 +74,8 @@ export const Calendar: React.FC<CalendarProps> = ({
         let anoEvento = today.getFullYear();
 
         if (evento.data) {
-          const [year, month, day] = evento.data.split('-').map(Number);
+          // Change this part to handle DD/MM/YYYY format
+          const [day, month, year] = evento.data.split('/').map(Number);
           eventDate = new Date(year, month - 1, day);
           
           dia = eventDate.getDate();
@@ -97,9 +98,10 @@ export const Calendar: React.FC<CalendarProps> = ({
           }
         }
         
+        // Keep the internal date format as ISO for consistency
         return {
           id: `evento-${index}`,
-          date: `${anoEvento}-${(mes + 1).toString().padStart(2, '0')}-${dia.toString().padStart(2, '0')}`,
+          date: `${dia.toString().padStart(2, '0')}/${(mes + 1).toString().padStart(2, '0')}/${anoEvento}`,
           dia,
           mes,
           ano: anoEvento,
