@@ -1,4 +1,3 @@
-"use client";
 import axios, { AxiosRequestConfig } from "axios";
 
 export class ApiService {
