@@ -1,8 +1,9 @@
 import { Calendar } from "@/components/calendar/calendar";
 import Card from "@/components/ui/Card";
+import { ICalendarEvent } from "@/interfaces/Calendar";
+import { IEvent } from "@/interfaces/Event";
+import { eventService } from "@/services/EventsService";
 import { generateColorFromTitle } from "@/utils/GenerateColor";
-import { IApiEvent } from "./interfaces/Api";
-import { ICalendarEvent } from "./interfaces/Calendar";
 
 function formatDate(dateString: string): string {
   const parts = dateString.split("-");
@@ -17,18 +18,13 @@ function formatDate(dateString: string): string {
 
 async function getEvents(): Promise<ICalendarEvent[]> {
   try {
-    const response = await fetch(
-      "https://dynamiccalendarapi.onrender.com/schedule",
-      {
-        cache: "no-store",
-      }
-    );
+    const response = await eventService.getEvents();
 
     if (!response.ok) {
       throw new Error(`Erro ao buscar eventos: ${response.status}`);
     }
 
-    const apiEvents: IApiEvent[] = await response.json();
+    const apiEvents: IEvent[] = await response.content;
 
     return apiEvents.map((event) => {
       const formattedDate = formatDate(event.date);
