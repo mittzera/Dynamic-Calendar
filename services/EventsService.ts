@@ -8,7 +8,7 @@ class EventsService {
 
   public async getEvents(): Promise<ServiceResponse<IEvent[]>> {
     try {
-      const response = await this.api.get(`${defaultUrl}/games`);
+      const response = await this.api.get(`${defaultUrl}schedule`);
       if (!response) {
         throw new Error(`Erro ao buscar eventos`);
       }
