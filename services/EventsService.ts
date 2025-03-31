@@ -1,4 +1,3 @@
-"use client";
 import { IEvent } from "@/interfaces/Event";
 import { ServiceResponse } from "@/interfaces/Service";
 import { api as apiService, ApiService, defaultUrl } from "./Api";
@@ -9,9 +8,11 @@ class EventsService {
   public async getEvents(): Promise<ServiceResponse<IEvent[]>> {
     try {
       const response = await this.api.get(`${defaultUrl}schedule`);
+
       if (!response) {
-        throw new Error(`Erro ao buscar eventos`);
+        throw new Error("Erro ao buscar eventos");
       }
+
       return {
         content: response as IEvent[],
         status: 200,
@@ -20,7 +21,7 @@ class EventsService {
     } catch (error) {
       return {
         content: [],
-        error: `Erro ao buscar eventos: ${error}`,
+        error: `Erro ao buscar eventos: ${String(error)}`,
         status: 500,
         ok: false,
       };
