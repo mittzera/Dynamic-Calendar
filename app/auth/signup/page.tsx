@@ -2,7 +2,6 @@ import { SignupForm } from "@/components/forms/signup-form";
 import { GalleryVerticalEnd } from "lucide-react";
 import Image from "next/image";
 
-
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -12,7 +11,7 @@ export default function LoginPage() {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-primary text-primary-foreground">
               <GalleryVerticalEnd className="size-4" />
             </div>
-            Dyna Calendar
+            Dynamic Calendar
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -21,12 +20,12 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-        <Image
-          src="/onecalendar.jpg"
-          alt="Image"
-          fill
-          className="object-cover dark:brightness-[0.2] dark:grayscale -z-10"
-        />
+      <Image
+        src="/onecalendar.jpg"
+        alt="Image"
+        fill
+        className="object-cover dark:brightness-[0.2] dark:grayscale -z-10"
+      />
     </div>
   );
 }
