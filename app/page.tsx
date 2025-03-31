@@ -1,4 +1,5 @@
 import { Calendar } from "@/components/calendar/calendar";
+import { Header } from "@/components/Header";
 import Card from "@/components/ui/Card";
 import { ICalendarEvent } from "@/interfaces/Calendar";
 import { IEvent } from "@/interfaces/Event";
@@ -59,31 +60,33 @@ async function getEvents(): Promise<ICalendarEvent[]> {
 export default async function Home() {
   const eventos = await getEvents();
 
-  if (!eventos || eventos.length === 0) {
-    return (
-      <section className="w-[90%] mx-auto mt-10">
-        <Card>
-          <div className="p-8 text-center">
-            <h2 className="text-xl font-semibold mb-2">
-              Sem eventos para exibir
-            </h2>
-            <p className="text-gray-500">
-              Não há eventos agendados no momento.
-            </p>
-            <div className="mt-4"></div>
-          </div>
-        </Card>
-      </section>
-    );
-  }
-
   return (
-    <section className="w-[90%] mx-auto mt-10">
-      <Card>
-        <div className="p-4">
-          <Calendar eventos={eventos} />
-        </div>
-      </Card>
-    </section>
+    <div>
+      <Header />
+
+      {!eventos || eventos.length === 0 ? (
+        <section className="w-[90%] mx-auto mt-10">
+          <Card>
+            <div className="p-8 text-center">
+              <h2 className="text-xl font-semibold mb-2">
+                Sem eventos para exibir
+              </h2>
+              <p className="text-gray-500">
+                Não há eventos agendados no momento.
+              </p>
+              <div className="mt-4"></div>
+            </div>
+          </Card>
+        </section>
+      ) : (
+        <section className="w-[90%] mx-auto mt-10">
+          <Card>
+            <div className="p-4">
+              <Calendar eventos={eventos} />
+            </div>
+          </Card>
+        </section>
+      )}
+    </div>
   );
 }
